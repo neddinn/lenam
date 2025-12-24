@@ -7,7 +7,6 @@ import { SkillNode } from '@/lib/types';
 
 interface LibraryScreenProps {
   onStartDrill: (topic: string) => void;
-  onBack: () => void;
 }
 
 // Helper to calculate days ago from a date - pure function
@@ -15,7 +14,7 @@ function getDaysAgo(date: Date, now: Date): number {
   return Math.round((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export function LibraryScreen({ onStartDrill, onBack }: LibraryScreenProps) {
+export function LibraryScreen({ onStartDrill }: LibraryScreenProps) {
   const [selectedNode, setSelectedNode] = useState<SkillNode | null>(null);
   const [hoveredNode, setHoveredNode] = useState<SkillNode | null>(null);
   const [showRapidRefresh, setShowRapidRefresh] = useState(false);
@@ -59,39 +58,10 @@ export function LibraryScreen({ onStartDrill, onBack }: LibraryScreenProps) {
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        padding: '80px 24px 24px',
+        padding: '40px 24px 24px',
         position: 'relative',
-        zIndex: 1,
       }}
     >
-      {/* Back button */}
-      <button
-        onClick={onBack}
-        style={{
-          position: 'fixed',
-          top: '24px',
-          left: '24px',
-          padding: '8px 16px',
-          borderRadius: 'var(--radius-full)',
-          border: '1px solid var(--border-subtle)',
-          background: 'var(--bg-card)',
-          color: 'var(--text-secondary)',
-          fontSize: '14px',
-          cursor: 'pointer',
-          transition: 'all var(--transition-fast)',
-          fontFamily: 'var(--font-ui)',
-          zIndex: 10,
-        }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.borderColor = 'var(--electric-teal)';
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.borderColor = 'var(--border-subtle)';
-        }}
-      >
-        ← Back
-      </button>
-
       {/* Header */}
       <div
         style={{

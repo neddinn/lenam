@@ -8,7 +8,6 @@ interface SetupScreenProps {
     topic: string,
     goal: 'interview' | 'build' | 'concept',
   ) => void;
-  onBack: () => void;
 }
 
 const goalModes = [
@@ -32,7 +31,7 @@ const goalModes = [
   },
 ];
 
-export function SetupScreen({ onStartDrill, onBack }: SetupScreenProps) {
+export function SetupScreen({ onStartDrill }: SetupScreenProps) {
   const [topic, setTopic] = useState('');
   const [goal, setGoal] = useState<'interview' | 'build' | 'concept'>(
     'interview',
@@ -79,38 +78,31 @@ export function SetupScreen({ onStartDrill, onBack }: SetupScreenProps) {
         justifyContent: 'center',
         padding: '40px 20px',
         position: 'relative',
-        zIndex: 1,
         background: getTopicAmbience(),
         transition: 'background var(--transition-smooth)',
       }}
     >
-      {/* Back button */}
-      <button
-        onClick={onBack}
+      {/* Page Header */}
+      <div
         style={{
-          position: 'fixed',
-          top: '24px',
-          left: '24px',
-          padding: '8px 16px',
-          borderRadius: 'var(--radius-full)',
-          border: '1px solid var(--border-subtle)',
-          background: 'var(--bg-card)',
-          color: 'var(--text-secondary)',
-          fontSize: '14px',
-          cursor: 'pointer',
-          transition: 'all var(--transition-fast)',
-          fontFamily: 'var(--font-ui)',
-          zIndex: 10,
-        }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.borderColor = 'var(--electric-teal)';
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.borderColor = 'var(--border-subtle)';
+          textAlign: 'center',
+          marginBottom: '40px',
         }}
       >
-        ← Back
-      </button>
+        <h1
+          style={{
+            fontSize: '32px',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            marginBottom: '8px',
+          }}
+        >
+          Start a New Drill
+        </h1>
+        <p style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>
+          Choose your topic and learning mode
+        </p>
+      </div>
 
       {/* Main content container */}
       <div

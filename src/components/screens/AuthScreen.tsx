@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 interface AuthScreenProps {
   mode: 'login' | 'signup';
-  onSubmit: (email: string, password: string) => void;
+  onSubmit: (email: string, password: string, name?: string) => void;
   onSwitchMode: () => void;
   onBack: () => void;
 }
@@ -21,7 +21,7 @@ export function AuthScreen({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(email, password);
+    onSubmit(email, password, mode === 'signup' ? name : undefined);
   };
 
   return (
