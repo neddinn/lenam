@@ -1,8 +1,8 @@
-# FlashLearn v1 PRD (Drill ↔ Teach ↔ Re-drill Loop)
+# Lenam v1 PRD (Drill ↔ Teach ↔ Re-drill Loop)
 
 ## 0) Summary
 
-FlashLearn is an interview readiness trainer for developers. The v1 product is a closed loop:
+Lenam is an interview readiness trainer for developers. The v1 product is a closed loop:
 **Drill (measure)** → **Teach Me (gap remediation)** → **Micro-quiz (verify)** → **Re-drill (re-measure)**
 Users earn a **Readiness Score (0–100)** per preset. The product wins if users can reliably move from “not ready” to “ready” quickly and feel it.
 

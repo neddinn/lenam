@@ -1,6 +1,6 @@
 # Product Plan Document
 
-## Product name (working): **FlashLearn**
+## Product name (working): **Lenam**
 
 Tagline: **“Interview-ready in minutes: Drill it, learn it, prove it.”**
 
@@ -600,7 +600,7 @@ Mitigation:
 
 ## Final directive (the path forward)
 
-**Start building FlashLearn today as Plan 4 + Plan 2 integrated.**
+**Start building Lenam today as Plan 4 + Plan 2 integrated.**
 Ship the Drill↔Teach↔Re-drill loop in 48–72 hours.
 Get 20 users on it immediately. Charge early. Iterate on trust + remediation quality.
 
