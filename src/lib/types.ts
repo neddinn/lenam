@@ -50,10 +50,39 @@ export interface UserProgress {
   skillNodes: SkillNode[];
 }
 
+// App screens now include marketing pages
 export type AppScreen =
-  | 'landing'
+  | 'marketing'
+  | 'login'
+  | 'signup'
   | 'setup'
   | 'drill'
   | 'teach'
   | 'summary'
-  | 'library';
+  | 'library'
+  | 'dashboard';
+
+export interface DrillResult {
+  question: Question;
+  userAnswer: string;
+  confidence: number;
+  isCorrect: boolean;
+}
+
+export interface PricingTier {
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  features: string[];
+  cta: string;
+  popular?: boolean;
+}
+
+export interface Testimonial {
+  name: string;
+  role: string;
+  company: string;
+  avatar?: string;
+  quote: string;
+}

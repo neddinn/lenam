@@ -98,12 +98,12 @@ body {
 @keyframes breathe {
   0%,
   100% {
-    opacity: 0.3;
+    opacity: 0.4;
     transform: scale(1);
   }
   50% {
     opacity: 0.5;
-    transform: scale(1.02);
+    transform: scale(1.005);
   }
 }
 
@@ -113,7 +113,7 @@ body {
     box-shadow: 0 0 0 0 var(--neon-green-glow);
   }
   50% {
-    box-shadow: 0 0 20px 8px var(--neon-green-glow);
+    box-shadow: 0 0 12px 4px var(--neon-green-glow);
   }
 }
 
@@ -123,7 +123,7 @@ body {
     box-shadow: 0 0 0 0 var(--electric-red-glow);
   }
   50% {
-    box-shadow: 0 0 20px 8px var(--electric-red-glow);
+    box-shadow: 0 0 12px 4px var(--electric-red-glow);
   }
 }
 
@@ -133,7 +133,7 @@ body {
     box-shadow: 0 0 0 0 var(--electric-teal-glow);
   }
   50% {
-    box-shadow: 0 0 20px 8px var(--electric-teal-glow);
+    box-shadow: 0 0 12px 4px var(--electric-teal-glow);
   }
 }
 
@@ -150,7 +150,7 @@ body {
 @keyframes slide-up {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -206,18 +206,13 @@ body {
   100% {
     transform: translateX(0);
   }
-  10%,
-  30%,
-  50%,
-  70%,
-  90% {
-    transform: translateX(-4px);
-  }
   20%,
+  60% {
+    transform: translateX(-2px);
+  }
   40%,
-  60%,
   80% {
-    transform: translateX(4px);
+    transform: translateX(2px);
   }
 }
 
