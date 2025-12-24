@@ -1,65 +1,201 @@
-import Image from 'next/image';
+'use client';
 
-export default function Home() {
+import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { DrillCard, StreakCounter, TeachOverlay } from '@/components';
+import { DEMO_QUESTIONS, TEACH_CONTENT } from '@/lib/dummyData';
+
+export default function LandingPage() {
+  const [streak, setStreak] = useState(0);
+  const [hasAnswered, setHasAnswered] = useState(false);
+  const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(
+    null,
+  );
+  const [showTeach, setShowTeach] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
+
+  // Current question for the landing demo
+  const question = DEMO_QUESTIONS[0];
+  const teachContent = TEACH_CONTENT[question.id];
+
+  // Track mouse for background effect
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({
+        x: e.clientX / window.innerWidth,
+        y: e.clientY / window.innerHeight,
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  const handleAnswer = useCallback((isCorrect: boolean) => {
+    setHasAnswered(true);
+    setLastAnswerCorrect(isCorrect);
+
+    if (isCorrect) {
+      setStreak((prev) => prev + 1);
+    }
+  }, []);
+
+  const handleTeachRequest = useCallback(() => {
+    setShowTeach(true);
+  }, []);
+
   return (
-    <div className='flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black'>
-      <main className='flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start'>
-        <Image
-          className='dark:invert'
-          src='/next.svg'
-          alt='Next.js logo'
-          width={100}
-          height={20}
-          priority
-        />
-        <div className='flex flex-col items-center gap-6 text-center sm:items-start sm:text-left'>
-          <h1 className='max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50'>
-            To get started, edit the page.tsx file.
+    <div className='min-h-screen relative overflow-hidden'>
+      {/* Animated mesh gradient background that follows mouse */}
+      <div
+        className='fixed inset-0 transition-all duration-1000 ease-out pointer-events-none'
+        style={{
+          background: `
+            radial-gradient(
+              600px circle at ${mousePosition.x * 100}% ${mousePosition.y * 100}%,
+              rgba(0, 255, 136, 0.08) 0%,
+              transparent 50%
+            ),
+            radial-gradient(
+              400px circle at ${(1 - mousePosition.x) * 100}% ${(1 - mousePosition.y) * 100}%,
+              rgba(0, 184, 255, 0.06) 0%,
+              transparent 50%
+            ),
+            var(--bg-obsidian)
+          `,
+        }}
+      />
+
+      {/* Header */}
+      <header className='relative z-10 flex items-center justify-between px-6 py-4'>
+        <div className='flex items-center gap-2'>
+          <span className='text-2xl font-bold text-text-primary'>Lenam</span>
+          <span className='badge badge-guidance'>Beta</span>
+        </div>
+        <nav className='flex items-center gap-4'>
+          <Link href='/library' className='btn btn-ghost'>
+            Library
+          </Link>
+          <Link href='/setup' className='btn btn-secondary'>
+            Sign In
+          </Link>
+        </nav>
+      </header>
+
+      {/* Main hero section */}
+      <main className='relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-6 py-12'>
+        {/* Hero text */}
+        <div className='text-center mb-12 max-w-2xl animate-fade-in'>
+          <h1 className='text-4xl md:text-5xl font-bold text-text-primary mb-4 text-balance'>
+            Master Technical Skills
+            <br />
+            <span className='text-neon-green'>Through Deep Focus</span>
           </h1>
-          <p className='max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400'>
-            Looking for a starting point or more instructions? Head over to{' '}
-            <a
-              href='https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app'
-              className='font-medium text-zinc-950 dark:text-zinc-50'
-            >
-              Templates
-            </a>{' '}
-            or the{' '}
-            <a
-              href='https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app'
-              className='font-medium text-zinc-950 dark:text-zinc-50'
-            >
-              Learning
-            </a>{' '}
-            center.
+          <p className='text-lg text-text-secondary'>
+            Adaptive drilling that builds real confidence. Interview ready in
+            weeks, not months.
           </p>
         </div>
-        <div className='flex flex-col gap-4 text-base font-medium sm:flex-row'>
-          <a
-            className='flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]'
-            href='https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app'
-            target='_blank'
-            rel='noopener noreferrer'
+
+        {/* Streak counter - appears after correct answer */}
+        {streak > 0 && (
+          <div className='mb-6 animate-scale-in'>
+            <StreakCounter count={streak} isAnimating />
+          </div>
+        )}
+
+        {/* Live micro-drill card - floating in 3D space */}
+        <div
+          className='w-full max-w-2xl animate-float'
+          style={{
+            perspective: '1000px',
+          }}
+        >
+          <DrillCard
+            question={question}
+            onAnswer={handleAnswer}
+            onTeachRequest={handleTeachRequest}
+            isLanding
+          />
+        </div>
+
+        {/* CTA Button - changes based on state */}
+        <div
+          className='mt-12 animate-slide-up'
+          style={{ animationDelay: '200ms' }}
+        >
+          {!hasAnswered && (
+            <p className='text-text-tertiary text-sm mb-4 text-center'>
+              ↑ Try answering above to experience the magic
+            </p>
+          )}
+
+          <Link
+            href='/setup'
+            className={`btn btn-xl ${
+              lastAnswerCorrect
+                ? 'btn-primary animate-glow-pulse'
+                : lastAnswerCorrect === false
+                  ? 'btn-danger'
+                  : 'btn-secondary'
+            }`}
           >
-            <Image
-              className='dark:invert'
-              src='/vercel.svg'
-              alt='Vercel logomark'
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className='flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]'
-            href='https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app'
-            target='_blank'
-            rel='noopener noreferrer'
-          >
-            Documentation
-          </a>
+            {lastAnswerCorrect
+              ? '🔥 Keep the Streak Alive'
+              : lastAnswerCorrect === false
+                ? '📚 Start Learning'
+                : 'Get Started Free'}
+          </Link>
+        </div>
+
+        {/* Features section */}
+        <div className='mt-24 grid md:grid-cols-3 gap-8 max-w-4xl w-full'>
+          <FeatureCard
+            icon='🎯'
+            title='Adaptive Drilling'
+            description='Questions adapt to your knowledge gaps. Focus on what matters.'
+          />
+          <FeatureCard
+            icon='⚡'
+            title='Instant Feedback'
+            description='Learn from mistakes immediately with contextual explanations.'
+          />
+          <FeatureCard
+            icon='📈'
+            title='Track Progress'
+            description="Visual readiness scores show exactly when you're interview ready."
+          />
         </div>
       </main>
+
+      {/* Teach Overlay */}
+      {teachContent && (
+        <TeachOverlay
+          question={question.question}
+          correctAnswer={question.options[question.correctIndex]}
+          content={teachContent}
+          isOpen={showTeach}
+          onClose={() => setShowTeach(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function FeatureCard({
+  icon,
+  title,
+  description,
+}: {
+  icon: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className='card p-6 text-center hover:bg-bg-surface transition-colors duration-200'>
+      <span className='text-3xl mb-4 block'>{icon}</span>
+      <h3 className='text-lg font-semibold text-text-primary mb-2'>{title}</h3>
+      <p className='text-sm text-text-secondary'>{description}</p>
     </div>
   );
 }
