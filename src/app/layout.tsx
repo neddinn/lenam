@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+import { AppProvider } from '@/lib/context';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -15,22 +16,30 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Lenam | Deep Focus Learning',
+  title: 'Lenam | Interview-Ready in Minutes',
   description:
-    'Master technical concepts through adaptive drilling. Interview Ready in weeks, not months.',
+    'Master technical concepts through adaptive drilling. Drill it, learn it, prove it. Interview ready in weeks, not months.',
   keywords: [
-    'learning',
+    'interview prep',
     'technical interview',
     'coding practice',
     'algorithms',
     'system design',
+    'react',
+    'typescript',
   ],
   authors: [{ name: 'Lenam' }],
   openGraph: {
-    title: 'Lenam | Deep Focus Learning',
+    title: 'Lenam | Interview-Ready in Minutes',
     description:
-      'Master technical concepts through adaptive drilling. Interview Ready in weeks, not months.',
+      'Master technical concepts through adaptive drilling. Drill it, learn it, prove it.',
     type: 'website',
+    siteName: 'Lenam',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Lenam | Interview-Ready in Minutes',
+    description: 'Master technical concepts through adaptive drilling.',
   },
 };
 
@@ -45,8 +54,10 @@ export default function RootLayout({
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
         style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}
       >
-        <div className='mesh-gradient' aria-hidden='true' />
-        {children}
+        <AppProvider>
+          <div className='mesh-gradient' aria-hidden='true' />
+          {children}
+        </AppProvider>
       </body>
     </html>
   );

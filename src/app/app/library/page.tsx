@@ -1,115 +1,148 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth, usePresets, useApp } from '@/lib/context';
+import { AppShell } from '@/components/layout/AppShell';
 import { SkillOrb, ToastContainer, useToast } from '@/components';
 import { DEMO_SKILLS, Skill } from '@/lib/dummyData';
+import { OrbState } from '@/components/ui/SkillOrb';
 
 type ViewMode = 'grid' | 'list';
-type FilterMode = 'all' | 'ready' | 'progress' | 'decay' | 'grey';
 
 export default function LibraryPage() {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  const { presets } = usePresets();
+  const { startSession } = useApp();
   const { toasts, addToast, dismissToast } = useToast();
 
-  const [skills, setSkills] = useState<Skill[]>(DEMO_SKILLS);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [filter, setFilter] = useState<FilterMode>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'saved' | 'ready' | 'learning'>(
+    'all',
+  );
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
+
+  if (!isAuthenticated) return null;
+
+  // Convert presets to skill format and merge with demo skills
+  const presetSkills: Skill[] = presets.map((p) => ({
+    id: p.id,
+    name: p.topicName,
+    state: (p.readinessScore >= 80
+      ? 'ready'
+      : p.readinessScore >= 50
+        ? 'progress'
+        : 'decay') as OrbState,
+    score: p.readinessScore,
+    lastPracticed: p.lastAttempted,
+  }));
+
+  // Merge with demo skills (avoiding duplicates)
+  const allSkills = [...presetSkills];
+  DEMO_SKILLS.forEach((skill) => {
+    if (
+      !allSkills.find((s) => s.name.toLowerCase() === skill.name.toLowerCase())
+    ) {
+      allSkills.push(skill);
+    }
+  });
 
   // Filter skills
-  const filteredSkills = skills.filter((skill) => {
+  const filteredSkills = allSkills.filter((skill) => {
     const matchesSearch = skill.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    const matchesFilter = filter === 'all' || skill.state === filter;
+    let matchesFilter = true;
+
+    if (filter === 'saved') {
+      matchesFilter = presets.some((p) => p.topicName === skill.name);
+    } else if (filter === 'ready') {
+      matchesFilter = skill.state === 'ready';
+    } else if (filter === 'learning') {
+      matchesFilter = skill.state === 'progress' || skill.state === 'decay';
+    }
+
     return matchesSearch && matchesFilter;
   });
 
   // Stats
   const stats = {
-    total: skills.length,
-    ready: skills.filter((s) => s.state === 'ready').length,
-    progress: skills.filter((s) => s.state === 'progress').length,
-    decay: skills.filter((s) => s.state === 'decay').length,
-    grey: skills.filter((s) => s.state === 'grey').length,
+    total: allSkills.length,
+    saved: presets.length,
+    ready: allSkills.filter((s) => s.state === 'ready').length,
+    learning: allSkills.filter(
+      (s) => s.state === 'progress' || s.state === 'decay',
+    ).length,
   };
 
-  // Handlers
-  const handleSkillClick = useCallback(
-    (skill: Skill) => {
-      router.push(
-        `/drill?topic=${encodeURIComponent(skill.name)}&goal=interview`,
-      );
-    },
-    [router],
-  );
+  const handleSkillClick = (skill: Skill) => {
+    startSession(skill.name, 'interview');
+    router.push(
+      `/app/drill/session?topic=${encodeURIComponent(skill.name)}&goal=interview`,
+    );
+  };
 
-  const handleRepair = useCallback(
-    (skill: Skill) => {
-      addToast(`Starting repair session for ${skill.name}...`, 'info');
-      setTimeout(() => {
-        router.push(
-          `/drill?topic=${encodeURIComponent(skill.name)}&goal=interview&mode=repair`,
-        );
-      }, 500);
-    },
-    [addToast, router],
-  );
+  const handleRepair = (skill: Skill) => {
+    addToast(`Starting repair session for ${skill.name}...`, 'info');
+    setTimeout(() => {
+      startSession(skill.name, 'interview');
+      router.push(
+        `/app/drill/session?topic=${encodeURIComponent(skill.name)}&goal=interview`,
+      );
+    }, 500);
+  };
 
   return (
-    <div className='min-h-screen flex flex-col'>
-      {/* Header */}
-      <header className='flex items-center justify-between px-6 py-4 border-b border-white/5'>
-        <div className='flex items-center gap-4'>
-          <Link href='/' className='text-xl font-bold text-text-primary'>
-            Lenam
-          </Link>
-          <span className='text-text-muted'>/</span>
-          <h1 className='text-lg font-medium text-text-secondary'>Library</h1>
-        </div>
-        <Link href='/setup' className='btn btn-primary'>
-          Start Drill
-        </Link>
-      </header>
-
-      <main className='flex-1 px-6 py-8'>
+    <AppShell>
+      <div className='p-6 lg:p-8'>
         <div className='max-w-6xl mx-auto'>
-          {/* Stats Overview */}
-          <div className='grid grid-cols-2 md:grid-cols-5 gap-4 mb-8'>
+          {/* Header */}
+          <div className='flex items-center justify-between mb-8'>
+            <div>
+              <h1 className='text-2xl md:text-3xl font-bold text-text-primary mb-2'>
+                Topic Library
+              </h1>
+              <p className='text-text-secondary'>
+                Track your progress across all topics.
+              </p>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-8'>
             <StatPill
-              label='Total'
+              label='All Topics'
               value={stats.total}
               active={filter === 'all'}
               onClick={() => setFilter('all')}
             />
             <StatPill
-              label='Ready'
+              label='Your Presets'
+              value={stats.saved}
+              color='var(--cool-blue)'
+              active={filter === 'saved'}
+              onClick={() => setFilter('saved')}
+            />
+            <StatPill
+              label='Interview Ready'
               value={stats.ready}
               color='var(--neon-green)'
               active={filter === 'ready'}
               onClick={() => setFilter('ready')}
             />
             <StatPill
-              label='Learning'
-              value={stats.progress}
-              color='var(--cool-blue)'
-              active={filter === 'progress'}
-              onClick={() => setFilter('progress')}
-            />
-            <StatPill
-              label='Needs Review'
-              value={stats.decay}
+              label='In Progress'
+              value={stats.learning}
               color='var(--electric-red)'
-              active={filter === 'decay'}
-              onClick={() => setFilter('decay')}
-            />
-            <StatPill
-              label='Not Started'
-              value={stats.grey}
-              active={filter === 'grey'}
-              onClick={() => setFilter('grey')}
+              active={filter === 'learning'}
+              onClick={() => setFilter('learning')}
             />
           </div>
 
@@ -118,7 +151,7 @@ export default function LibraryPage() {
             <div className='relative flex-1 max-w-md'>
               <input
                 type='text'
-                placeholder='Search skills...'
+                placeholder='Search topics...'
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className='input pl-10'
@@ -174,6 +207,7 @@ export default function LibraryPage() {
                 <SkillListItem
                   key={skill.id}
                   skill={skill}
+                  isSaved={presets.some((p) => p.topicName === skill.name)}
                   onClick={() => handleSkillClick(skill)}
                   onRepair={() => handleRepair(skill)}
                 />
@@ -185,18 +219,17 @@ export default function LibraryPage() {
           {filteredSkills.length === 0 && (
             <div className='text-center py-16'>
               <span className='text-4xl mb-4 block'>🔍</span>
-              <p className='text-text-secondary'>No skills found</p>
+              <p className='text-text-secondary'>No topics found</p>
               <p className='text-text-muted text-sm mt-1'>
                 Try adjusting your search or filter
               </p>
             </div>
           )}
         </div>
-      </main>
+      </div>
 
-      {/* Toast notifications */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
-    </div>
+    </AppShell>
   );
 }
 
@@ -238,10 +271,12 @@ function StatPill({
 
 function SkillListItem({
   skill,
+  isSaved,
   onClick,
   onRepair,
 }: {
   skill: Skill;
+  isSaved: boolean;
   onClick: () => void;
   onRepair: () => void;
 }) {
@@ -284,7 +319,10 @@ function SkillListItem({
                 : '○'}
         </div>
         <div>
-          <p className='font-medium text-text-primary'>{skill.name}</p>
+          <div className='flex items-center gap-2'>
+            <p className='font-medium text-text-primary'>{skill.name}</p>
+            {isSaved && <span className='text-xs text-cool-blue'>★ Saved</span>}
+          </div>
           {skill.lastPracticed && (
             <p className='text-xs text-text-muted'>
               Last: {skill.lastPracticed}

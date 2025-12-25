@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { useAuth, useApp } from '@/lib/context';
 import {
   DrillCard,
   ReadinessMeter,
@@ -12,12 +12,14 @@ import {
 } from '@/components';
 import { DEMO_QUESTIONS, TEACH_CONTENT } from '@/lib/dummyData';
 
-function DrillContent() {
+function DrillSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const topic = searchParams.get('topic') || 'General';
   const goal = searchParams.get('goal') || 'interview';
 
+  const { isAuthenticated } = useAuth();
+  const { endSession } = useApp();
   const { toasts, addToast, dismissToast } = useToast();
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -26,23 +28,30 @@ function DrillContent() {
   const [totalAnswered, setTotalAnswered] = useState(0);
   const [showTeach, setShowTeach] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
-  const [cardKey, setCardKey] = useState(0); // For forcing card remount
+  const [cardKey, setCardKey] = useState(0);
 
   const currentQuestion =
     DEMO_QUESTIONS[currentQuestionIndex % DEMO_QUESTIONS.length];
   const teachContent = TEACH_CONTENT[currentQuestion.id];
 
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        router.push('/setup');
+      if (e.key === 'Escape' && !showTeach) {
+        router.push('/app/drill');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [router]);
+  }, [router, showTeach]);
 
   const handleAnswer = useCallback(
     (isCorrect: boolean, confidence: number) => {
@@ -50,13 +59,10 @@ function DrillContent() {
 
       if (isCorrect) {
         setCorrectCount((prev) => prev + 1);
-
-        // Update readiness score
         const isHighConfidence = confidence >= 70;
         const scoreIncrease = isHighConfidence ? 8 : 4;
         setReadinessScore((prev) => Math.min(100, prev + scoreIncrease));
 
-        // Show toast for low confidence correct
         if (!isHighConfidence) {
           addToast(
             "Right answer, but you hesitated. We'll verify this later.",
@@ -64,7 +70,6 @@ function DrillContent() {
           );
         }
       } else {
-        // Decrease score slightly on wrong
         setReadinessScore((prev) => Math.max(0, prev - 5));
       }
     },
@@ -76,35 +81,40 @@ function DrillContent() {
   }, []);
 
   const handleNext = useCallback(() => {
-    // Check if session is complete (e.g., after 5 questions)
     if (totalAnswered >= 4) {
       setSessionComplete(true);
+      const finalScore = readinessScore;
+      const finalCorrect = correctCount + 1;
+      const finalTotal = totalAnswered + 1;
+
+      endSession(finalScore, finalCorrect, finalTotal);
+
       setTimeout(() => {
         router.push(
-          `/summary?score=${readinessScore}&correct=${correctCount + 1}&total=${totalAnswered + 1}&topic=${encodeURIComponent(topic)}`,
+          `/app/drill/summary?score=${finalScore}&correct=${finalCorrect}&total=${finalTotal}&topic=${encodeURIComponent(topic)}`,
         );
       }, 500);
       return;
     }
 
-    // Move to next question with animation
     setCardKey((prev) => prev + 1);
     setTimeout(() => {
       setCurrentQuestionIndex((prev) => prev + 1);
     }, 100);
-  }, [totalAnswered, readinessScore, correctCount, topic, router]);
+  }, [totalAnswered, readinessScore, correctCount, topic, router, endSession]);
 
   const handleCloseTeach = useCallback(() => {
     setShowTeach(false);
-    // After closing teach, move to next question
     setTimeout(() => {
       handleNext();
     }, 300);
   }, [handleNext]);
 
+  if (!isAuthenticated) return null;
+
   if (sessionComplete) {
     return (
-      <div className='min-h-screen flex items-center justify-center'>
+      <div className='min-h-screen flex items-center justify-center bg-bg-obsidian'>
         <div className='animate-scale-in text-center'>
           <div className='text-6xl mb-4'>✨</div>
           <p className='text-xl text-text-primary'>Session Complete!</p>
@@ -114,13 +124,12 @@ function DrillContent() {
   }
 
   return (
-    <div className='min-h-screen flex flex-col'>
-      {/* HUD - Heads Up Display */}
-      <header className='flex items-center justify-between px-6 py-4'>
-        {/* Topic */}
+    <div className='min-h-screen flex flex-col bg-bg-obsidian'>
+      {/* HUD */}
+      <header className='flex items-center justify-between px-6 py-4 bg-bg-charcoal/50 border-b border-white/5'>
         <div className='flex items-center gap-3'>
-          <Link
-            href='/setup'
+          <button
+            onClick={() => router.push('/app/drill')}
             className='btn btn-ghost p-2'
             aria-label='Back to setup'
           >
@@ -134,15 +143,16 @@ function DrillContent() {
             >
               <path d='M15 10H5M5 10l5-5M5 10l5 5' />
             </svg>
-          </Link>
+          </button>
           <div>
-            <p className='text-sm text-text-tertiary'>Topic</p>
+            <p className='text-sm text-text-tertiary'>
+              {goal.charAt(0).toUpperCase() + goal.slice(1)} Mode
+            </p>
             <p className='font-semibold text-text-primary'>{topic}</p>
           </div>
         </div>
 
-        {/* Progress indicator */}
-        <div className='flex items-center gap-4'>
+        <div className='flex items-center gap-6'>
           <div className='text-center'>
             <p className='text-xs text-text-tertiary'>Progress</p>
             <p className='font-mono text-sm text-text-secondary'>
@@ -150,7 +160,6 @@ function DrillContent() {
             </p>
           </div>
 
-          {/* Readiness Meter */}
           <ReadinessMeter
             score={readinessScore}
             provisional={totalAnswered < 3}
@@ -172,8 +181,8 @@ function DrillContent() {
         </div>
       </main>
 
-      {/* Footer with keyboard hints */}
-      <footer className='px-6 py-4'>
+      {/* Keyboard hints */}
+      <footer className='px-6 py-4 bg-bg-charcoal/30'>
         <div className='flex items-center justify-center gap-6 text-xs text-text-muted'>
           <span>
             <kbd className='px-1.5 py-0.5 rounded bg-bg-surface font-mono'>
@@ -202,10 +211,8 @@ function DrillContent() {
         </div>
       </footer>
 
-      {/* Toast notifications */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
-      {/* Teach Overlay */}
       {teachContent && (
         <TeachOverlay
           question={currentQuestion.question}
@@ -219,16 +226,18 @@ function DrillContent() {
   );
 }
 
-export default function DrillPage() {
+export default function DrillSessionPage() {
   return (
     <Suspense
       fallback={
-        <div className='min-h-screen flex items-center justify-center'>
-          <div className='animate-pulse text-text-secondary'>Loading...</div>
+        <div className='min-h-screen flex items-center justify-center bg-bg-obsidian'>
+          <div className='animate-pulse text-text-secondary'>
+            Loading session...
+          </div>
         </div>
       }
     >
-      <DrillContent />
+      <DrillSessionContent />
     </Suspense>
   );
 }

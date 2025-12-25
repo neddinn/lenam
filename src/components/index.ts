@@ -15,3 +15,6 @@ export type { ToastType } from './ui/Toast';
 export { SetupInput } from './ui/SetupInput';
 export { StreakCounter } from './ui/StreakCounter';
 export { BadgeStamp } from './ui/BadgeStamp';
+
+// Layout Components
+export { AppShell, AppSidebar, AppHeader } from './layout/AppShell';
